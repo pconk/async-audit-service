@@ -17,13 +17,13 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.23'
+        go-version: '1.26'
 
     - name: Install Dependencies
-      run: go mod tidy
+      run: go mod download
 
     - name: Run Unit Tests
       run: go test -v ./...
 
     - name: Build Application
-      run: go build -v internal/cmd/api/main.go
+      run: go build -v ./cmd/api/main.go
