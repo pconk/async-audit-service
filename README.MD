@@ -16,6 +16,41 @@
 
 ---
 
+🛠️ ***Tech Stack***
+
+* **Language:** ***Go (Golang)***
+* **Communication:** ***gRPC*** (High-performance Remote Procedure Call)
+* **Serialization:** ***Protocol Buffers (proto3)***
+* **Database:** ***MongoDB*** (Flexible & High-throughput logging)
+* **Logging:** ***slog*** (Standard Structured Logging)
+* **Security:** ***JWT (JSON Web Token)*** for Inter-service Authentication
+* **Infrastruktur:** ***Docker & Docker Compose*** (Containerized Environment)
+
+---
+🏗 ***Architecture Overview***
+```
+    [ User / Client ]
+              │
+              ▼
+   ┌──────────────────────┐
+   │  Warehouse Management│ 
+   │        API           │ ───▶ [ MySQL (Stock Data) ]
+   └──────────┬───────────┘
+              │
+      ( Async Call via )
+      (  gRPC + Proto  )
+              │
+              ▼
+   ┌──────────────────────┐       ┌────────────────────────┐
+   │  Async Audit Service │ ───▶  │    MongoDB (Logs)      │
+   │ (Go + gRPC Server)   │       │ (Immutable Histori)    │
+   └──────────┬───────────┘       └────────────────────────┘
+              │
+      [ Interceptors Chain ]
+      ├─ Logger (Metrics)
+      └─ Auth (JWT Validate)
+```      
+
 ## 📂 Struktur Proyek
 ```text
 .
@@ -44,7 +79,7 @@
 
 ### 2. Instalasi Dependensi
 ```bash
-go mod tidy
+go mod download
 ```
 
 ### 3. Generate Protobuf (Jika ada perubahan)
