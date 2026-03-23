@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package audit;
+
+option go_package = "async-audit-service/pb";
+
+import "google/protobuf/timestamp.proto";
+
+service AuditService {
+  rpc LogActivity(AuditRequest) returns (AuditResponse);
+}
+
+message AuditRequest {
+  // Pelaku & Lokasi
+  string username = 1;
+  string warehouse_id = 2;
+  string role = 3;
+
+  // Detail Transaksi
+  string action = 4; // Contoh: "STOCK_OUT", "ADJUSTMENT"
+  string sku = 5;
+  string product_name = 6;
+  int32 quantity_changed = 7;
+  int32 final_stock = 8;
+
+  // Metadata & Waktu
+  google.protobuf.Timestamp timestamp = 9;
+  map<string, string> metadata = 10; // Digunakan untuk {"request_id": "UUID"}
+}
+
+message AuditResponse {
+  bool success = 1;
+}

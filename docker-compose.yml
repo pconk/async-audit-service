@@ -1,0 +1,42 @@
+services:
+  audit-service:
+    build: .
+    container_name: async_audit_service
+    ports:
+      - "50051:50051"
+    environment:
+      - APP_PORT=50051
+      # Hostname 'mongo_audit' merujuk ke nama service di bawah
+      - MONGO_URI=mongodb://mongo_audit:27017
+      - DB_NAME=audit_db
+      - JWT_SECRET=rahasia-super-aman
+    depends_on:
+      mongo_audit:
+          condition: service_healthy
+    networks:
+      - audit-net
+
+  mongo_audit:
+    image: mongo:8.0
+    container_name: mongo_audit
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=audit_db
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - audit-net
+
+networks:
+  audit-net:
+    driver: bridge
+
+volumes:
+  mongo_data:
