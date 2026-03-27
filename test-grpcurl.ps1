@@ -1,26 +1,60 @@
-# ==========================================
-# Test Script gRPC Audit Service (PowerShell)
-# ==========================================
-# Requirement:
-# 1. Service Audit jalan (go run internal/cmd/api/main.go)
-# 2. Tool 'grpcurl' terinstall (go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest)
+# Konfigurasi
+$GrpcAddress = "localhost:50052"
+$ProtoFile = "proto/audit.proto"
+$token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzQ2NzIxNTYsImlzcyI6ImF1ZGl0LXNlcnZpY2UtdGVzdCIsInJvbGUiOiJhZG1pbiIsInVzZXJfaWQiOiIxIiwidXNlcm5hbWUiOiJhZG1pbl9ndWRhbmciLCJ3YXJlaG91c2VfaWQiOiJXSC1KS1QtMDk5In0.lZlwHOQTNT8OtT_hwddp7WQYDvARXBDHgRGgFvai1Ig"
 
-# --- 1. SETUP TOKEN ---
-# Karena service ini diproteksi Auth Middleware, kita butuh JWT Token valid.
-# Cara cepat untuk testing manual:
-# 1. Buka https://jwt.io/
-# 2. Di bagian VERIFY SIGNATURE, masukkan secret key dari .env: "rahasia-super-aman"
-# 3. Copy string "Encoded" (token) dari box kiri dan paste di bawah ini:
+# Cek apakah grpcurl terinstall
+if (-not (Get-Command grpcurl -ErrorAction SilentlyContinue)) {
+    Write-Error "Tool 'grpcurl' tidak ditemukan. Silakan install: go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest"
+    exit
+}
 
-$token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzQzMzI0MDMsImlzcyI6ImF1ZGl0LXNlcnZpY2UtdGVzdCIsInJvbGUiOiJhZG1pbiIsInVzZXJuYW1lIjoiYWRtaW5fZ3VkYW5nIiwid2FyZWhvdXNlX2lkIjoiV0gtSktULTA5OSJ9.168sV5Lgvh3UOdUYhoeu6C_LEgNVgPR1-SNpcXiAcU8"
+Write-Host "--- Audit Service gRPC Tester ---" -ForegroundColor Cyan
+Write-Host "1. LogActivity (Simulasi Trigger dari Warehouse API)"
+Write-Host "2. GetRecentLogs (Ambil Data untuk Gateway)"
+Write-Host "------------------------------------------------"
+$choice = Read-Host "Pilih menu (1/2)"
 
-# --- 2. PREPARE PAYLOAD ---
-$data = '{\"username\": \"admin_gudang\", \"warehouse_id\": \"WH-JKT-099\", \"role\": \"admin\", \"action\": \"STOCK_OUT\", \"sku\": \"MAC-001\", \"product_name\": \"Macbook Pro M2 14-inch\", \"quantity_changed\": 1, \"final_stock\": 6, \"timestamp\": \"2026-03-23T13:21:00Z\", \"metadata\": {\"request_id\": \"test-uuid-8888\", \"source\": \"powershell-script\"}}'
+switch ($choice) {
+    "1" {
+        Write-Host "`n--- Menjalankan LogActivity ---" -ForegroundColor Yellow
+        
+        # Menyiapkan timestamp dalam format RFC3339 yang diterima google.protobuf.Timestamp
+        $timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
 
-# --- 3a. DEBUG ---
-Write-Host "Perintah yang akan dijalankan:"
-Write-Host "grpcurl -plaintext -H 'Authorization: Bearer $token' -d '$data' localhost:50051 audit.AuditService/LogActivity"
+        $payload = @{
+            user_id          = "user-99"
+            username         = "admin_gudang"
+            warehouse_id     = "WH-JKT-01"
+            role             = "admin"
+            action           = "STOCK_IN"
+            sku              = "ELC-LAP-001"
+            product_name     = "MacBook Pro M3"
+            quantity_changed = 10
+            final_stock      = 55
+            timestamp        = $timestamp
+            metadata         = @{
+                source     = "manual-test-ps"
+                request_id = [guid]::NewGuid().ToString()
+            }
+        } | ConvertTo-Json -Compress
+        
+        Write-Output $payload | grpcurl -plaintext -H "Authorization: Bearer $token" -proto $ProtoFile -d "@" $GrpcAddress audit.AuditService/LogActivity
+    }
 
-# --- 3b. EXECUTE ---
-Write-Host "Mengirim request ke localhost:50051..."
-grpcurl -plaintext -H "Authorization: Bearer $token" -d $data localhost:50051 audit.AuditService/LogActivity
+    "2" {
+        Write-Host "`n--- Menjalankan GetRecentLogs ---" -ForegroundColor Yellow
+        $limit = Read-Host "Masukkan jumlah limit (default 5)"
+        if (-not $limit) { $limit = 5 }
+
+        $payload = @{ limit = [int]$limit } | ConvertTo-Json -Compress
+
+        $payload | grpcurl -plaintext -H "Authorization: Bearer $token" -proto $ProtoFile -d "@" $GrpcAddress audit.AuditService/GetRecentLogs
+    }
+
+    Default {
+        Write-Host "Pilihan tidak valid." -ForegroundColor Red
+    }
+}
+
+Write-Host "`nSelesai." -ForegroundColor Green

@@ -9,6 +9,7 @@ import (
 
 type AuditService interface {
 	RecordLog(ctx context.Context, log entity.AuditLog) error
+	GetRecentLogs(ctx context.Context, limit int) ([]entity.RecentLog, error)
 }
 
 type auditService struct {
@@ -27,4 +28,8 @@ func (s *auditService) RecordLog(ctx context.Context, log entity.AuditLog) error
 	// Di sini bisa ditaruh logic tambahan sebelum save ke DB
 	// Misal: Validasi data kosong, masking data sensitif, dll.
 	return s.repo.Insert(ctx, log)
+}
+
+func (s *auditService) GetRecentLogs(ctx context.Context, limit int) ([]entity.RecentLog, error) {
+	return s.repo.GetRecentLogs(ctx, limit)
 }

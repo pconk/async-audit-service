@@ -25,6 +25,7 @@ func NewAuditHandler(service service.AuditService, logger *slog.Logger) *AuditHa
 func (h *AuditHandler) LogActivity(ctx context.Context, req *pb.AuditRequest) (*pb.AuditResponse, error) {
 	// Konversi Proto ke Entity Domain
 	auditLog := entity.AuditLog{
+		UserID:          req.UserId,
 		Username:        req.Username,
 		WarehouseID:     req.WarehouseId,
 		Role:            req.Role,
@@ -40,11 +41,11 @@ func (h *AuditHandler) LogActivity(ctx context.Context, req *pb.AuditRequest) (*
 	// Ambil Request ID dari Context (yg digenerate middleware)
 	reqID := middleware.GetRequestID(ctx)
 
-	h.logger.Info("Received audit log", "request_id", reqID, "action", req.Action, "sku", req.Sku)
+	h.logger.Info("Received LogActivity request", "request_id", reqID, "action", req.Action, "sku", req.Sku, "user", req.Username)
 
 	err := h.service.RecordLog(ctx, auditLog)
 	if err != nil {
-		h.logger.Error("Failed to record log", "error", err)
+		h.logger.Error("Database operation failed for LogActivity", "request_id", reqID, "error", err)
 		return &pb.AuditResponse{
 			Success: false,
 		}, err
@@ -53,4 +54,24 @@ func (h *AuditHandler) LogActivity(ctx context.Context, req *pb.AuditRequest) (*
 	return &pb.AuditResponse{
 		Success: true,
 	}, nil
+}
+
+func (h *AuditHandler) GetRecentLogs(ctx context.Context, req *pb.GetRecentLogsRequest) (*pb.GetRecentLogsResponse, error) {
+	reqID := middleware.GetRequestID(ctx)
+	h.logger.Info("Processing GetRecentLogs", "request_id", reqID, "limit", req.Limit)
+
+	// 1. Ambil data dari repository (hasilnya []entity.RecentLog)
+	logs, err := h.service.GetRecentLogs(ctx, int(req.Limit))
+	if err != nil {
+		h.logger.Error("Failed to fetch recent logs", "request_id", reqID, "error", err)
+		return nil, err
+	}
+
+	// 2. Mapping & Konversi
+	pbLogs := make([]*pb.RecentLog, 0, len(logs))
+	for _, l := range logs {
+		pbLogs = append(pbLogs, l.ToProto())
+	}
+
+	return &pb.GetRecentLogsResponse{Logs: pbLogs}, nil
 }

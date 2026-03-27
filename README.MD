@@ -2,7 +2,7 @@
 
 # Async Audit Service (gRPC + Go)
 
-**Async Audit Service** adalah microservice yang dirancang untuk mencatat jejak audit (log aktivitas) secara asinkronus dari layanan utama. Dibangun menggunakan **Go**, **gRPC**, dan **MongoDB** dengan menerapkan prinsip **Clean Architecture**.
+Service ini bertanggung jawab untuk mencatat seluruh aktivitas transaksi dari Warehouse API secara asinkronus dan menyediakan data log untuk dikonsumsi oleh Unified Warehouse GraphQL Gateway.
 
 ## 🚀 Fitur Utama
 * **gRPC Framework:** Komunikasi antar-service yang cepat dan efisien menggunakan Protocol Buffers.
@@ -23,7 +23,7 @@
 * **Serialization:** ***Protocol Buffers (proto3)***
 * **Database:** ***MongoDB*** (Flexible & High-throughput logging)
 * **Logging:** ***slog*** (Standard Structured Logging)
-* **Security:** ***JWT (JSON Web Token)*** for Inter-service Authentication
+* **Auth:** JWT Interceptor
 * **Infrastruktur:** ***Docker & Docker Compose*** (Containerized Environment)
 
 ---
@@ -54,9 +54,8 @@
 ## 📂 Struktur Proyek
 ```text
 .
-├── audit/              # Definisi file .proto
+├── cmd/api/            # Entry point aplikasi
 ├── internal/           # Logika privat aplikasi
-│   ├── cmd/api/        # Entry point (main.go)
 │   ├── config/         # Manajemen konfigurasi & env
 │   ├── entity/         # Struktur data / model database
 │   ├── handler/grpc/   # Implementasi gRPC server
@@ -64,9 +63,14 @@
 │   ├── repository/     # Layer akses ke MongoDB
 │   └── service/        # Business logic
 ├── pb/                 # Generated code dari protoc
+├── pkg/                # Shared utilities (DB connection)
+├── proto/              # Protobuf contract files
 ├── go.mod              # Go dependencies
-└── README.md
+├── README.md
+└── test-grpcurl.ps1    # CLI Testing tool
 ```
+## 📈 Database Optimization
+Service secara otomatis membuat index pada field `created_at` (Descending) di koleksi `audit_logs` saat aplikasi dijalankan. Hal ini memastikan query `GetRecentLogs` tetap cepat meskipun data sudah berukuran besar.
 
 ---
 
@@ -94,7 +98,7 @@ Aplikasi menggunakan variabel lingkungan (environment variables) yang dikelola d
 
 | Variabel | Deskripsi | Default |
 | :--- | :--- | :--- |
-| `APP_PORT` | Port untuk gRPC Server | `50051` |
+| `APP_PORT` | Port untuk gRPC Server | `50052` |
 | `MONGO_URI` | URI koneksi MongoDB | `mongodb://localhost:27017` |
 | `DB_NAME` | Nama database di Mongo | `audit_db` |
 | `JWT_SECRET` | Secret key untuk validasi Auth | `-` |
@@ -105,7 +109,7 @@ Aplikasi menggunakan variabel lingkungan (environment variables) yang dikelola d
 
 ### Menjalankan Server
 ```bash
-go run internal/cmd/api/main.go
+go run ./cmd/api/main.go
 ```
 
 ## 🧪 Cara Testing (Manual)

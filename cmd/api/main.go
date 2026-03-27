@@ -8,11 +8,13 @@ import (
 	"async-audit-service/internal/service"
 	"async-audit-service/pb"
 	"async-audit-service/pkg/database"
+	"context"
 	"log/slog"
 	"net"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
@@ -42,11 +44,20 @@ func main() {
 
 	// 4. Init Layers (Dependency Injection)
 	auditRepo := repository.NewAuditRepository(db)
+
+	// Gunakan timeout untuk inisialisasi index
+	indexCtx, cancelIndex := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancelIndex()
+	if err := auditRepo.CreateIndexes(indexCtx); err != nil {
+		logger.Error("Failed to create MongoDB indexes", "error", err)
+	} else {
+		logger.Info("MongoDB indexes created/verified successfully")
+	}
+
 	auditService := service.NewAuditService(auditRepo, logger)
 	auditHandler := grpcHandler.NewAuditHandler(auditService, logger)
 
 	// Init Middleware
-	// Init Middleware (Pastikan ini ada)
 	authInterceptor := middleware.NewAuthInterceptor(cfg)
 	loggerInterceptor := middleware.NewLoggerInterceptor(logger)
 
