@@ -1,7 +1,7 @@
 # Konfigurasi
 $GrpcAddress = "localhost:50052"
 $ProtoFile = "proto/audit.proto"
-$token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzQ2NzIxNTYsImlzcyI6ImF1ZGl0LXNlcnZpY2UtdGVzdCIsInJvbGUiOiJhZG1pbiIsInVzZXJfaWQiOiIxIiwidXNlcm5hbWUiOiJhZG1pbl9ndWRhbmciLCJ3YXJlaG91c2VfaWQiOiJXSC1KS1QtMDk5In0.lZlwHOQTNT8OtT_hwddp7WQYDvARXBDHgRGgFvai1Ig"
+$token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzQ3NzIxNTYsImlzcyI6ImF1ZGl0LXNlcnZpY2UtdGVzdCIsInJvbGUiOiJhZG1pbiIsInVzZXJfaWQiOiIxIiwidXNlcm5hbWUiOiJhZG1pbl9ndWRhbmciLCJ3YXJlaG91c2VfaWQiOiJXSC1KS1QtMDk5In0.4xsVcbm5vnvNLb45_Z1e2xQZFnwry053IkM1QTEVmJA"
 
 # Cek apakah grpcurl terinstall
 if (-not (Get-Command grpcurl -ErrorAction SilentlyContinue)) {
@@ -23,7 +23,7 @@ switch ($choice) {
         $timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
 
         $payload = @{
-            user_id          = "user-99"
+            user_id          = 1
             username         = "admin_gudang"
             warehouse_id     = "WH-JKT-01"
             role             = "admin"

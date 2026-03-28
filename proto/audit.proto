@@ -13,7 +13,7 @@ service AuditService {
 
 message AuditRequest {
   // Pelaku & Lokasi
-  string user_id = 1;
+  int64 user_id = 1;
   string username = 2;
   string warehouse_id = 3;
   string role = 4;
@@ -33,7 +33,7 @@ message AuditRequest {
 message RecentLog {
   // Pelaku & Lokasi
   string id = 1;
-  string user_id = 2;
+  int64 user_id = 2;
   string username = 3;
   string warehouse_id = 4;
   string role = 5;

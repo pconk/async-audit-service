@@ -25,7 +25,7 @@ const (
 type AuditRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Pelaku & Lokasi
-	UserId      string `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	UserId      int64  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	Username    string `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
 	WarehouseId string `protobuf:"bytes,3,opt,name=warehouse_id,json=warehouseId,proto3" json:"warehouse_id,omitempty"`
 	Role        string `protobuf:"bytes,4,opt,name=role,proto3" json:"role,omitempty"`
@@ -72,11 +72,11 @@ func (*AuditRequest) Descriptor() ([]byte, []int) {
 	return file_proto_audit_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *AuditRequest) GetUserId() string {
+func (x *AuditRequest) GetUserId() int64 {
 	if x != nil {
 		return x.UserId
 	}
-	return ""
+	return 0
 }
 
 func (x *AuditRequest) GetUsername() string {
@@ -153,7 +153,7 @@ type RecentLog struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Pelaku & Lokasi
 	Id          string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	UserId      string `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	UserId      int64  `protobuf:"varint,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	Username    string `protobuf:"bytes,3,opt,name=username,proto3" json:"username,omitempty"`
 	WarehouseId string `protobuf:"bytes,4,opt,name=warehouse_id,json=warehouseId,proto3" json:"warehouse_id,omitempty"`
 	Role        string `protobuf:"bytes,5,opt,name=role,proto3" json:"role,omitempty"`
@@ -205,11 +205,11 @@ func (x *RecentLog) GetId() string {
 	return ""
 }
 
-func (x *RecentLog) GetUserId() string {
+func (x *RecentLog) GetUserId() int64 {
 	if x != nil {
 		return x.UserId
 	}
-	return ""
+	return 0
 }
 
 func (x *RecentLog) GetUsername() string {
@@ -413,7 +413,7 @@ const file_proto_audit_proto_rawDesc = "" +
 	"\n" +
 	"\x11proto/audit.proto\x12\x05audit\x1a\x1fgoogle/protobuf/timestamp.proto\"\xc9\x03\n" +
 	"\fAuditRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1a\n" +
+	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12!\n" +
 	"\fwarehouse_id\x18\x03 \x01(\tR\vwarehouseId\x12\x12\n" +
 	"\x04role\x18\x04 \x01(\tR\x04role\x12\x16\n" +
@@ -431,7 +431,7 @@ const file_proto_audit_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xdb\x02\n" +
 	"\tRecentLog\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
-	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x1a\n" +
+	"\auser_id\x18\x02 \x01(\x03R\x06userId\x12\x1a\n" +
 	"\busername\x18\x03 \x01(\tR\busername\x12!\n" +
 	"\fwarehouse_id\x18\x04 \x01(\tR\vwarehouseId\x12\x12\n" +
 	"\x04role\x18\x05 \x01(\tR\x04role\x12\x16\n" +

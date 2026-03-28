@@ -10,7 +10,7 @@ import (
 
 type AuditLog struct {
 	ID              primitive.ObjectID `bson:"_id,omitempty"`
-	UserID          string             `bson:"user_id"`
+	UserID          int64              `bson:"user_id"`
 	Username        string             `bson:"username"`
 	WarehouseID     string             `bson:"warehouse_id"`
 	Role            string             `bson:"role"`
@@ -26,7 +26,7 @@ type AuditLog struct {
 // RecentLog digunakan khusus untuk Query pengambilan data terbaru
 type RecentLog struct {
 	ID              primitive.ObjectID `bson:"_id"`
-	UserID          string             `bson:"user_id"`
+	UserID          int64              `bson:"user_id"`
 	Username        string             `bson:"username"`
 	WarehouseID     string             `bson:"warehouse_id"`
 	Role            string             `bson:"role"`

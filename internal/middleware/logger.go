@@ -26,6 +26,21 @@ func AddLogFields(ctx context.Context, fields ...slog.Attr) {
 	}
 }
 
+// CreateTraceGroup menggabungkan request_id dan field tambahan ke dalam satu grup log trace
+func CreateTraceGroup(requestID string, extraFields []slog.Attr) slog.Attr {
+	traceAttrs := make([]any, 0, len(extraFields)+1)
+	traceAttrs = append(traceAttrs, slog.String("request_id", requestID))
+	for _, attr := range extraFields {
+		traceAttrs = append(traceAttrs, attr)
+	}
+	return slog.Group("trace", traceAttrs...)
+}
+
+// DurationToMs mengonversi time.Duration menjadi float64 milidetik
+func DurationToMs(d time.Duration) float64 {
+	return float64(d.Nanoseconds()) / 1e6
+}
+
 // GetRequestID mengambil request ID dari context (untuk dipakai di handler/service)
 func GetRequestID(ctx context.Context) string {
 	if v, ok := ctx.Value(requestIDKey).(string); ok {
@@ -56,29 +71,29 @@ func (i *LoggerInterceptor) Unary() grpc.UnaryServerInterceptor {
 		// Panggil handler berikutnya (bisa berupa AuthInterceptor atau Handler utama)
 		resp, err := handler(ctx, req)
 
-		duration := time.Since(start)
-
-		// Siapkan field log dasar
-		logFields := []any{
-			slog.String("request_id", reqID),
-			slog.String("method", info.FullMethod),
-			slog.Duration("duration", duration),
-		}
-
-		// 3. Masukkan field tambahan dari middleware lain (Auth)
-		for _, attr := range extraFields {
-			logFields = append(logFields, attr)
-		}
+		// Tentukan status, level, dan message
+		level := slog.LevelInfo
+		statusStr := "OK"
+		msg := "gRPC Request Success"
 
 		if err != nil {
-			// Cek status code gRPC (misal: Unauthenticated, Internal, dll)
 			st, _ := status.FromError(err)
-			logFields = append(logFields, slog.String("status", st.Code().String()), slog.String("error", err.Error()))
-			i.logger.Error("gRPC Request Failed", logFields...)
-		} else {
-			logFields = append(logFields, slog.String("status", "OK"))
-			i.logger.Info("gRPC Request Success", logFields...)
+			statusStr = st.Code().String()
+			level = slog.LevelError
+			msg = "gRPC Request Failed"
+			// Masukkan error ke dalam extra fields agar masuk ke group trace
+			extraFields = append(extraFields, slog.String("error", err.Error()))
 		}
+
+		// Log dengan struktur Grouping (trace & grpc)
+		i.logger.LogAttrs(ctx, level, msg,
+			CreateTraceGroup(reqID, extraFields),
+			slog.Group("grpc",
+				slog.String("method", info.FullMethod),
+				slog.String("status", statusStr),
+				slog.Float64("duration_ms", DurationToMs(time.Since(start))),
+			),
+		)
 
 		return resp, err
 	}

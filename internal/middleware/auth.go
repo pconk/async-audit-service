@@ -56,16 +56,22 @@ func (i *AuthInterceptor) Unary() grpc.UnaryServerInterceptor {
 
 		// 4. Extract Data dari Claims (Username & WarehouseID)
 		if claims, ok := token.Claims.(jwt.MapClaims); ok {
-			// Helper function untuk ambil string dengan aman
-			getString := func(key string) string {
-				if v, ok := claims[key].(string); ok {
-					return v
+			// Ambil UserID dengan aman (bisa string atau float64 dari JWT)
+			var userID string
+			if id, ok := claims["user_id"]; ok {
+				switch v := id.(type) {
+				case float64:
+					userID = fmt.Sprintf("%.0f", v)
+				case string:
+					userID = v
 				}
-				return ""
 			}
 
+			username, _ := claims["username"].(string)
+			role, _ := claims["role"].(string)
+
 			// Tambahkan info user ke Log LoggerInterceptor
-			AddLogFields(ctx, slog.String("jwt_username", getString("username")), slog.String("jwt_warehouse_id", getString("warehouse_id")))
+			AddLogFields(ctx, slog.String("user_id", userID), slog.String("username", username), slog.String("role", role))
 		}
 
 		// Jika valid, lanjutkan ke handler utama

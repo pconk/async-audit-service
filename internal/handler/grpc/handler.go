@@ -25,7 +25,7 @@ func NewAuditHandler(service service.AuditService, logger *slog.Logger) *AuditHa
 func (h *AuditHandler) LogActivity(ctx context.Context, req *pb.AuditRequest) (*pb.AuditResponse, error) {
 	// Konversi Proto ke Entity Domain
 	auditLog := entity.AuditLog{
-		UserID:          req.UserId,
+		UserID:          req.UserId, // Sekarang sudah int64 sesuai proto terbaru
 		Username:        req.Username,
 		WarehouseID:     req.WarehouseId,
 		Role:            req.Role,
