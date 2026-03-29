@@ -47,7 +47,7 @@ func TestRecordLog(t *testing.T) {
 
 	ctx := context.Background()
 	dummyLog := entity.AuditLog{
-		UserID:          "user-123",
+		UserID:          123,
 		Username:        "test_user",
 		Action:          "ADJUST_STOCK",
 		SKU:             "ITEM-001",
@@ -60,8 +60,10 @@ func TestRecordLog(t *testing.T) {
 	}
 
 	t.Run("Success Record Log", func(t *testing.T) {
-		// Expectation: Repository Insert dipanggil 1 kali dengan argumen apa saja, return nil (sukses)
-		mockRepo.On("Insert", ctx, dummyLog).Return(nil).Once()
+		// Gunakan MatchedBy karena CreatedAt (time.Now) tidak bisa dibandingkan secara direct
+		mockRepo.On("Insert", mock.Anything, mock.MatchedBy(func(l entity.AuditLog) bool {
+			return l.UserID == dummyLog.UserID && l.SKU == dummyLog.SKU
+		})).Return(nil).Once()
 
 		// Execute
 		err := auditService.RecordLog(ctx, dummyLog)
@@ -72,8 +74,8 @@ func TestRecordLog(t *testing.T) {
 	})
 
 	t.Run("Failed Record Log (DB Error)", func(t *testing.T) {
-		// Expectation: Repository return error
-		mockRepo.On("Insert", ctx, dummyLog).Return(errors.New("db connection error")).Once()
+		mockRepo.On("Insert", mock.Anything, mock.Anything).
+			Return(errors.New("db connection error")).Once()
 
 		err := auditService.RecordLog(ctx, dummyLog)
 
@@ -93,13 +95,13 @@ func TestGetRecentLogs(t *testing.T) {
 		limit := 2
 		expectedLogs := []entity.RecentLog{
 			{
-				UserID:   "user-1",
+				UserID:   1,
 				Username: "admin",
 				Action:   "STOCK_IN",
 				SKU:      "SKU-001",
 			},
 			{
-				UserID:   "user-2",
+				UserID:   2,
 				Username: "staff",
 				Action:   "STOCK_OUT",
 				SKU:      "SKU-002",
