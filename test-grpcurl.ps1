@@ -1,7 +1,8 @@
 # Konfigurasi
 $GrpcAddress = "localhost:50052"
 $ProtoFile = "proto/audit.proto"
-$token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzQ3NzIxNTYsImlzcyI6ImF1ZGl0LXNlcnZpY2UtdGVzdCIsInJvbGUiOiJhZG1pbiIsInVzZXJfaWQiOiIxIiwidXNlcm5hbWUiOiJhZG1pbl9ndWRhbmciLCJ3YXJlaG91c2VfaWQiOiJXSC1KS1QtMDk5In0.4xsVcbm5vnvNLb45_Z1e2xQZFnwry053IkM1QTEVmJA"
+$requestID = "reqid-001"
+$token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzQ4NzIxNTYsImlzcyI6ImF1ZGl0LXNlcnZpY2UtdGVzdCIsInJvbGUiOiJhZG1pbiIsInVzZXJfaWQiOiIxIiwidXNlcm5hbWUiOiJhZG1pbl9ndWRhbmciLCJ3YXJlaG91c2VfaWQiOiJXSC1KS1QtMDk5In0.J2M_tRQPCUi_AGJrWZJwTxNUxNh_HJD-pKLRONOtp"
 
 # Cek apakah grpcurl terinstall
 if (-not (Get-Command grpcurl -ErrorAction SilentlyContinue)) {
@@ -39,7 +40,7 @@ switch ($choice) {
             }
         } | ConvertTo-Json -Compress
         
-        Write-Output $payload | grpcurl -plaintext -H "Authorization: Bearer $token" -proto $ProtoFile -d "@" $GrpcAddress audit.AuditService/LogActivity
+        Write-Output $payload | grpcurl -plaintext -H "Authorization: Bearer $token" -H "x-request-id: $requestID" -proto $ProtoFile -d "@" $GrpcAddress audit.AuditService/LogActivity
     }
 
     "2" {
@@ -49,7 +50,7 @@ switch ($choice) {
 
         $payload = @{ limit = [int]$limit } | ConvertTo-Json -Compress
 
-        $payload | grpcurl -plaintext -H "Authorization: Bearer $token" -proto $ProtoFile -d "@" $GrpcAddress audit.AuditService/GetRecentLogs
+        $payload | grpcurl -plaintext -H "Authorization: Bearer $token" -H "x-request-id: $requestID" -proto $ProtoFile -d "@" $GrpcAddress audit.AuditService/GetRecentLogs
     }
 
     Default {

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -15,13 +16,13 @@ import (
 type ctxKey string
 
 const (
-	logFieldsKey ctxKey = "log_fields"
-	requestIDKey ctxKey = "request_id"
+	LogFieldsKey ctxKey = "log_fields"
+	RequestIDKey ctxKey = "request_id"
 )
 
 // AddLogFields memungkinkan middleware lain menambahkan field ke log utama
 func AddLogFields(ctx context.Context, fields ...slog.Attr) {
-	if v, ok := ctx.Value(logFieldsKey).(*[]slog.Attr); ok {
+	if v, ok := ctx.Value(LogFieldsKey).(*[]slog.Attr); ok {
 		*v = append(*v, fields...)
 	}
 }
@@ -43,7 +44,7 @@ func DurationToMs(d time.Duration) float64 {
 
 // GetRequestID mengambil request ID dari context (untuk dipakai di handler/service)
 func GetRequestID(ctx context.Context) string {
-	if v, ok := ctx.Value(requestIDKey).(string); ok {
+	if v, ok := ctx.Value(RequestIDKey).(string); ok {
 		return v
 	}
 	return ""
@@ -59,14 +60,31 @@ func NewLoggerInterceptor(logger *slog.Logger) *LoggerInterceptor {
 
 func (i *LoggerInterceptor) Unary() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		// 1. Generate Request ID (UUID sederhana)
-		reqID := generateRequestID()
-		ctx = context.WithValue(ctx, requestIDKey, reqID)
+		// 1. Cek apakah ada Request ID di metadata (dikirim oleh Gateway/Warehouse)
+		md, ok := metadata.FromIncomingContext(ctx)
+		var reqID string
+		if ok {
+			if ids := md.Get("x-request-id"); len(ids) > 0 {
+				reqID = ids[0]
+			}
+		}
+
+		// 2. Jika tidak ada di metadata, baru generate sendiri
+		if reqID == "" {
+			reqID = generateRequestID()
+		}
+
+		// Simpan ID ke context
+		ctx = context.WithValue(ctx, RequestIDKey, reqID)
 		start := time.Now()
 
-		// 2. Siapkan wadah untuk log tambahan (username, warehouse_id, dll)
+		// 3. Siapkan wadah untuk log tambahan (username, role, dll)
 		var extraFields []slog.Attr
-		ctx = context.WithValue(ctx, logFieldsKey, &extraFields)
+		ctx = context.WithValue(ctx, LogFieldsKey, &extraFields)
+
+		// 4. Kirim balik Request ID ke Client lewat Header Response gRPC
+		header := metadata.Pairs("x-request-id", reqID)
+		grpc.SendHeader(ctx, header)
 
 		// Panggil handler berikutnya (bisa berupa AuthInterceptor atau Handler utama)
 		resp, err := handler(ctx, req)
